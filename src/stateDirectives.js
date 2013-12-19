@@ -149,7 +149,10 @@ function $StateActiveDirective($state, $stateParams, $interpolate) {
 
       // Update route state
       function update() {
-        if ($state.$current.self === state && matchesParams()) {
+        if (
+          ($state.$current.self === state && matchesParams()) /* Exact match */ ||
+          ($attrs.uiNested !== undefined && $state.includes(state.name)) /* Match nested state */
+          ) {
           $element.addClass(activeClass);
         } else {
           $element.removeClass(activeClass);
