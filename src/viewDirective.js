@@ -134,10 +134,17 @@ function $ViewDirective(   $state,   $compile,   $controller,   $injector,   $ui
 
             currentScope = $scope.$new();
             $compile(currentEl.contents())(currentScope);
+
+            // Reset viewLocals to locals. Otherwise on next update when `locals`
+            // is populated, it gives true on deep equality check with `viewLocals`.
+            // This is basically required because of the additional deep-equality check
+            // in the view retain code below [1].
+            viewLocals = locals;
+
             return;
           }
 
-          // Nothing to do if previous locals is exactly the same as currert locals.
+          // [1] nothing to do if view to be rendered is same as last one.
           if (locals === viewLocals || /* fast-check the obj references */
             (locals && viewLocals && /* deep-comparing essential elements */
               angular.equals(locals, viewLocals) &&
