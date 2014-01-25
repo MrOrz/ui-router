@@ -17,6 +17,7 @@ function stateContext(el) {
  * @name ui.router.state.directive:ui-sref
  *
  * @requires ui.router.state.$state
+ * @requires ui.router.state.$stateParams
  * @requires $timeout
  *
  * @restrict A
@@ -48,13 +49,13 @@ function stateContext(el) {
  *
  * @param {string} ui-sref 'stateName' can be any valid absolute or relative state
  */
-$StateRefDirective.$inject = ['$state', '$timeout'];
-function $StateRefDirective($state, $timeout) {
+$StateRefDirective.$inject = ['$state', '$timeout', '$stateParams'];
+function $StateRefDirective($state, $timeout, $stateParams) {
   return {
     restrict: 'A',
     link: function(scope, element, attrs) {
       var ref = parseStateRef(attrs.uiSref);
-      var params = null, url = null, base = stateContext(element) || $state.$current;
+      var state = null, params = null, url = null, base = stateContext(element) || $state.$current;
       var isForm = element[0].nodeName === "FORM";
       var attr = isForm ? "action" : "href", nav = true;
 
@@ -63,6 +64,7 @@ function $StateRefDirective($state, $timeout) {
         if (!nav) return;
 
         var newHref = $state.href(ref.state, params, { relative: base });
+        state = $state.get(ref.state, base);
 
         if (!newHref) {
           nav = false;
@@ -109,14 +111,18 @@ function $StateRefDirective($state, $timeout) {
         // 2. The ancestor ui-sref-active has removed their previously appended classes.
         //
         $timeout(function(){
-          if($state.is(ref.state, params)){
+          if($state.$current.self === state && matchesParams()){
             // Exact match of current state
             scope.$emit('$uiSrefActivated');
-          }else if($state.includes(ref.state, params)){
+          }else if($state.includes(state, params) && matchesParams()){
             // The current state is a child of reference state
             scope.$emit('$uiSrefChildStateActivated');
           }
         });
+      }
+
+      function matchesParams() {
+        return !params || equalForKeys(params, $stateParams);
       }
     }
   };
