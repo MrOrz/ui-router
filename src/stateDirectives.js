@@ -127,7 +127,6 @@ function $StateRefDirective($state, $timeout) {
  * @name ui.router.state.directive:ui-sref-active
  *
  * @requires ui.router.state.$state
- * @requires ui.router.state.$stateParams
  * @requires $interpolate
  *
  * @restrict A
@@ -149,8 +148,8 @@ function $StateRefDirective($state, $timeout) {
  * </ul>
  * </pre>
  */
-$StateActiveDirective.$inject = ['$state', '$stateParams', '$interpolate'];
-function $StateActiveDirective($state, $stateParams, $interpolate) {
+$StateActiveDirective.$inject = ['$state', '$interpolate'];
+function $StateActiveDirective($state, $interpolate) {
   return {
     restrict: "A",
     scope: true, // Catching $uiSref*Activated events without sibling's interferance.
