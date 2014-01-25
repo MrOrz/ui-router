@@ -114,7 +114,7 @@ function $StateRefDirective($state, $timeout, $stateParams) {
           if($state.$current.self === state && matchesParams()){
             // Exact match of current state
             scope.$emit('$uiSrefActivated');
-          }else if($state.includes(state, params) && matchesParams()){
+          }else if($state.includes(state.name) && matchesParams()){
             // The current state is a child of reference state
             scope.$emit('$uiSrefChildStateActivated');
           }
