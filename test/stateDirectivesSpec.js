@@ -285,51 +285,61 @@ describe('uiSrefActive', function() {
     document = $document[0];
   }));
 
-  it('should update class for sibling uiSref', inject(function($rootScope, $q, $compile, $state) {
+  it('should update class for sibling uiSref', inject(function($rootScope, $q, $compile, $state, $timeout) {
     el = angular.element('<div><a ui-sref="contacts" ui-sref-active="active">Contacts</a></div>');
     template = $compile(el)($rootScope);
     $rootScope.$digest();
+    $timeout.flush(); // emitEvent timeout hacks
 
-    expect(angular.element(template[0].querySelector('a')).attr('class')).toBe('');
+    expect(angular.element(template[0].querySelector('a')).attr('class')).toBe('ng-scope');
     $state.transitionTo('contacts');
+    $timeout.flush(); // emitEvent timeout hacks
     $q.flush();
 
-    expect(angular.element(template[0].querySelector('a')).attr('class')).toBe('active');
+    expect(angular.element(template[0].querySelector('a')).attr('class')).toBe('ng-scope active');
 
     $state.transitionTo('contacts.item', { id: 5 });
+    $timeout.flush(); // emitEvent timeout hacks
     $q.flush();
-    expect(angular.element(template[0].querySelector('a')).attr('class')).toBe('');
+
+    expect(angular.element(template[0].querySelector('a')).attr('class')).toBe('ng-scope active-nested');
   }));
 
-  it('should match state\'s parameters', inject(function($rootScope, $q, $compile, $state) {
+  it('should match state\'s parameters', inject(function($rootScope, $q, $compile, $state, $timeout) {
     el = angular.element('<div><a ui-sref="contacts.item.detail({ foo: \'bar\' })" ui-sref-active="active">Contacts</a></div>');
     template = $compile(el)($rootScope);
     $rootScope.$digest();
+    $timeout.flush(); // emitEvent timeout hacks
 
-    expect(angular.element(template[0].querySelector('a')).attr('class')).toBe('');
+    expect(angular.element(template[0].querySelector('a')).attr('class')).toBe('ng-scope');
     $state.transitionTo('contacts.item.detail', { id: 5, foo: 'bar' });
     $q.flush();
-    expect(angular.element(template[0].querySelector('a')).attr('class')).toBe('active');
+    $timeout.flush(); // emitEvent timeout hacks
+    expect(angular.element(template[0].querySelector('a')).attr('class')).toBe('ng-scope active');
 
     $state.transitionTo('contacts.item.detail', { id: 5, foo: 'baz' });
     $q.flush();
-    expect(angular.element(template[0].querySelector('a')).attr('class')).toBe('');
+    $timeout.flush(); // emitEvent timeout hacks
+    expect(angular.element(template[0].querySelector('a')).attr('class')).toBe('ng-scope');
   }));
 
-  it('should resolve relative state refs', inject(function($rootScope, $q, $compile, $state) {
+  it('should resolve relative state refs', inject(function($rootScope, $q, $compile, $state, $timeout) {
     el = angular.element('<section><div ui-view></div></section>');
     template = $compile(el)($rootScope);
     $rootScope.$digest();
 
     $state.transitionTo('contacts');
+    $timeout.flush(); // emitEvent timeout hacks
     $q.flush();
     expect(angular.element(template[0].querySelector('a')).attr('class')).toBe('ng-scope');
 
     $state.transitionTo('contacts.item', { id: 6 });
+    $timeout.flush(); // emitEvent timeout hacks
     $q.flush();
     expect(angular.element(template[0].querySelector('a')).attr('class')).toBe('ng-scope active');
 
     $state.transitionTo('contacts.item', { id: 5 });
+    $timeout.flush(); // emitEvent timeout hacks
     $q.flush();
     expect(angular.element(template[0].querySelector('a')).attr('class')).toBe('ng-scope');
   }));
