@@ -94,16 +94,7 @@ function $StateRefDirective($state, $timeout, $stateParams) {
         }
       });
 
-      // Emits $uiSref*Activated events.
-      scope.$on('$stateChangeSuccess', emitEvents);
-
-      // Also emits the events when the element is first created (linked).
-      // This makes sure the events are emitted if a state is directly navigated
-      // through the browser navigation bar.
-      //
-      emitEvents();
-
-      function emitEvents() {
+      var emitEvents = function(){
         // HACK:
         // Emits events only after
         // 1. The execution of link functions of ancestor's ui-sref-active
@@ -119,7 +110,16 @@ function $StateRefDirective($state, $timeout, $stateParams) {
             scope.$emit('$uiSrefChildStateActivated');
           }
         });
-      }
+      };
+
+      // Emits $uiSref*Activated events.
+      scope.$on('$stateChangeSuccess', emitEvents);
+
+      // Also emits the events when the element is first created (linked).
+      // This makes sure the events are emitted if a state is directly navigated
+      // through the browser navigation bar.
+      //
+      emitEvents();
 
       function matchesParams() {
         return !params || equalForKeys(params, $stateParams);
