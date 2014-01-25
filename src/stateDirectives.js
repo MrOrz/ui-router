@@ -52,8 +52,7 @@ $StateRefDirective.$inject = ['$state', '$timeout'];
 function $StateRefDirective($state, $timeout) {
   return {
     restrict: 'A',
-    require: '?^uiSrefActive',
-    link: function(scope, element, attrs, uiSrefActive) {
+    link: function(scope, element, attrs) {
       var ref = parseStateRef(attrs.uiSref);
       var params = null, url = null, base = stateContext(element) || $state.$current;
       var isForm = element[0].nodeName === "FORM";
@@ -65,9 +64,6 @@ function $StateRefDirective($state, $timeout) {
 
         var newHref = $state.href(ref.state, params, { relative: base });
 
-        if (uiSrefActive) {
-          uiSrefActive.$$setStateInfo(ref.state, params);
-        }
         if (!newHref) {
           nav = false;
           return false;
@@ -95,6 +91,33 @@ function $StateRefDirective($state, $timeout) {
           e.preventDefault();
         }
       });
+
+      // Emits $uiSref*Activated events.
+      scope.$on('$stateChangeSuccess', emitEvents);
+
+      // Also emits the events when the element is first created (linked).
+      // This makes sure the events are emitted if a state is directly navigated
+      // through the browser navigation bar.
+      //
+      emitEvents();
+
+      function emitEvents() {
+        // HACK:
+        // Emits events only after
+        // 1. The execution of link functions of ancestor's ui-sref-active
+        // or,
+        // 2. The ancestor ui-sref-active has removed their previously appended classes.
+        //
+        $timeout(function(){
+          if($state.is(ref.state, params)){
+            // Exact match of current state
+            scope.$emit('$uiSrefActivated');
+          }else if($state.includes(ref.state, params)){
+            // The current state is a child of reference state
+            scope.$emit('$uiSrefChildStateActivated');
+          }
+        });
+      }
     }
   };
 }
@@ -130,34 +153,29 @@ $StateActiveDirective.$inject = ['$state', '$stateParams', '$interpolate'];
 function $StateActiveDirective($state, $stateParams, $interpolate) {
   return {
     restrict: "A",
-    controller: ['$scope', '$element', '$attrs', function($scope, $element, $attrs) {
-      var state, params, activeClass;
+    scope: true, // Catching $uiSref*Activated events without sibling's interferance.
+    link: function(scope, element, attrs) {
+      var activeClass, activeClassNested, activeClassList;
 
       // There probably isn't much point in $observing this
-      activeClass = $interpolate($attrs.uiSrefActive || '', false)($scope);
+      activeClass = $interpolate(attrs.uiSrefActive || '', false)(scope);
+      activeClassNested = activeClass + '-nested';
+      activeClassList = [activeClass, activeClassNested].join(' '); // space-separated list of all appended classes
 
-      // Allow uiSref to communicate with uiSrefActive
-      this.$$setStateInfo = function(newState, newParams) {
-        state = $state.get(newState, stateContext($element));
-        params = newParams;
-        update();
-      };
+      // Remove all previously appended classes.
+      scope.$on('$stateChangeSuccess', function(){
+        element.removeClass(activeClassList);
+      });
 
-      $scope.$on('$stateChangeSuccess', update);
+      scope.$on('$uiSrefActivated', function(){
+        element.addClass(activeClass);
+      });
 
-      // Update route state
-      function update() {
-        if ($state.$current.self === state && matchesParams()) {
-          $element.addClass(activeClass);
-        } else {
-          $element.removeClass(activeClass);
-        }
-      }
+      scope.$on('$uiSrefChildStateActivated', function(){
+        element.addClass(activeClassNested);
+      });
 
-      function matchesParams() {
-        return !params || equalForKeys(params, $stateParams);
-      }
-    }]
+    }
   };
 }
 
